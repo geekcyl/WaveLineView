@@ -147,46 +147,51 @@ public class WaveLineView extends RenderView {
 
     @Override
     protected void onRender(Canvas canvas, long millisPassed) {
-        float offset = millisPassed / offsetSpeed;
+        try {
 
-        if (null == samplingX || null == mapX || null == pathFuncs){
-            initDraw(canvas);
-        }
+            float offset = millisPassed / offsetSpeed;
 
-        if (lineAnim(canvas)) {
-            resetPaths();
-            softerChangeVolume();
+            if (null == samplingX || null == mapX || null == pathFuncs) {
+                initDraw(canvas);
+            }
 
-            //波形函数的值
-            float curY;
-            for (int i = 0; i <= samplingSize; i++) {
-                float x = samplingX[i];
-                curY = (float) (amplitude * calcValue(mapX[i], offset));
+            if (lineAnim(canvas)) {
+                resetPaths();
+                softerChangeVolume();
+
+                //波形函数的值
+                float curY;
+                for (int i = 0; i <= samplingSize; i++) {
+                    float x = samplingX[i];
+                    curY = (float) (amplitude * calcValue(mapX[i], offset));
+                    for (int n = 0; n < paths.size(); n++) {
+                        //四条线分别乘以不同的函数系数
+                        float realY = curY * pathFuncs[n] * volume * 0.01f;
+                        paths.get(n).lineTo(x, centerHeight + realY);
+                    }
+                }
+
+                //连线至终点
+                for (int i = 0; i < paths.size(); i++) {
+                    paths.get(i).moveTo(width, centerHeight);
+                }
+
+                //绘制曲线
                 for (int n = 0; n < paths.size(); n++) {
-                    //四条线分别乘以不同的函数系数
-                    float realY = curY * pathFuncs[n] * volume * 0.01f;
-                    paths.get(n).lineTo(x, centerHeight + realY);
+
+                    if (n == 0) {
+                        paint.setStrokeWidth(thickLineWidth);
+                        paint.setAlpha((int) (255 * alphaInAnim()));
+                    } else {
+                        paint.setStrokeWidth(fineLineWidth);
+                        paint.setAlpha((int) (100 * alphaInAnim()));
+                    }
+                    canvas.drawPath(paths.get(n), paint);
                 }
+
             }
-
-            //连线至终点
-            for (int i = 0; i < paths.size(); i++) {
-                paths.get(i).moveTo(width, centerHeight);
-            }
-
-            //绘制曲线
-            for (int n = 0; n < paths.size(); n++) {
-
-                if (n == 0) {
-                    paint.setStrokeWidth(thickLineWidth);
-                    paint.setAlpha((int)(255 * alphaInAnim()));
-                } else {
-                    paint.setStrokeWidth(fineLineWidth);
-                    paint.setAlpha((int)(100 * alphaInAnim()));
-                }
-                canvas.drawPath(paths.get(n), paint);
-            }
-
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
     }
